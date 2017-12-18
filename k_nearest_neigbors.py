@@ -1,6 +1,10 @@
 import numpy as np
 from sklearn import neighbors
+import matplotlib.pyplot as plt
+from sklearn import preprocessing
+from sklearn import decomposition
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 ########################################################################
 # Author: github.com/pauldes
@@ -15,7 +19,7 @@ from sklearn.model_selection import train_test_split
 # 5. Train the model on the whole labelled set
 # 6. Predict unlabelled data.
 ########################################################################
-#version='min-'
+version='min-'
 version=''
 
 ############
@@ -31,11 +35,21 @@ csvtrain = csvtrain[1:,:]
 labels = csvtrain[:,0]
 pixels = csvtrain[:,1:]
 
-# Sampling 20%
-print("Sampling training data")
-sample = np.random.randint(csvtrain.shape[0], size=int(csvtrain.shape[0]*0.2))
+# Sampling %
+SAMPLING_RATE = 0.1
+print("Sampling training data - ",SAMPLING_RATE)
+sample = np.random.randint(csvtrain.shape[0], size=int(csvtrain.shape[0]*SAMPLING_RATE))
 data = pixels[sample,:]
 target = labels[sample]
+
+# PCA!
+'''
+std_scale = preprocessing.StandardScaler().fit(data)
+data = std_scale.transform(data)
+#target = std_scale.transform(target)
+data = pca.transform(data)
+#target = pca.transform(target)
+'''
 
 ############
 # STEP 2
@@ -46,8 +60,32 @@ print("Splitting training data")
 xtrain, xtest, ytrain, ytest = train_test_split(data,target,train_size=0.8,test_size=0.2)
 
 ############
+# STEP 2-BISBIS
+############
+
+errors = []
+for k in range(1,11):
+    print("Fitting with k=",k)
+    knn = neighbors.KNeighborsClassifier(k)
+    knn.fit(xtrain, ytrain)
+    errors.append([k , 100*(1-knn.score(xtest, ytest))])
+errors = np.array(errors)
+
+MIN_ERR_K = int(errors[:,0][np.argmin(errors[:,1])])
+print("Minimum error with k=",MIN_ERR_K)
+plt.plot(errors[:,0],errors[:,1])
+plt.scatter(MIN_ERR_K,np.min(errors[:,1]),c='red')
+plt.ylabel('Error rate (%)')
+plt.title('Error rate with neighbours number')
+plt.show()
+
+
+
+############
 # STEP 3
 ############
+
+print(xtrain.shape)
 
 # 3-NN
 print("Training K-NN")
@@ -66,6 +104,8 @@ print('Erreur: ',error)
 # k=5 scores 0.96857
 # k=3 scores 0.96800
 
+
+
 ############
 # STEP 5
 ############
@@ -75,7 +115,7 @@ print('Erreur: ',error)
 print("Training K-NN on full dataset")
 xtrain = pixels[:,:]
 ytrain = labels[:]
-knn = neighbors.KNeighborsClassifier(n_neighbors=3)
+knn = neighbors.KNeighborsClassifier(n_neighbors=MIN_ERR_K)
 knn.fit(xtrain, ytrain)
 
 ############
@@ -98,4 +138,4 @@ results = np.vstack([indexes,ypred])
 print("Transposing")
 results = results.transpose()
 print("Saving")
-np.savetxt ('./csv/submission.csv', results, delimiter=",",fmt="%i",header="ImageId,Label")
+np.savetxt ('./csv/submission.csv', results, delimiter=",",fmt="%i",header="ImageId,Label",comment="")
