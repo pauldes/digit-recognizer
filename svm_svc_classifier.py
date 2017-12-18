@@ -22,4 +22,8 @@ df = pd.DataFrame(results)
 df.index+=1
 df.index.name='ImageId'
 df.columns=['Label']
+<<<<<<< HEAD
 df.to_csv('./csv/res_svm_svc_binary.csv', header=True)
+=======
+df.to_csv('./csv/res_svm_svc_binary.csv', header=True)
+>>>>>>> 453171a21702da4cd10d18de2dd7a0f04fcf8588
